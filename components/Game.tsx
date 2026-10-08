@@ -21,20 +21,21 @@ interface GameState {
 const freshDaily = (): GameState => ({ mode: "daily", guesses: [], solved: false });
 const storageKey = (todayKey: string) => `handles:daily:${todayKey}`;
 
+/** Reprend la partie du jour sauvegardée dans le navigateur, sinon une partie neuve. */
+function loadDaily(todayKey: string): GameState {
+  try {
+    const saved = localStorage.getItem(storageKey(todayKey));
+    return saved ? (JSON.parse(saved) as GameState) : freshDaily();
+  } catch {
+    return freshDaily(); // stockage indisponible : on repart de zéro
+  }
+}
+
+/** Rendu uniquement dans le navigateur (voir GameLoader), donc localStorage est disponible ici. */
 export function Game({ options, todayKey }: { options: PlayerOption[]; todayKey: string }) {
-  const [game, setGame] = useState<GameState>(freshDaily);
+  const [game, setGame] = useState<GameState>(() => loadDaily(todayKey));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reprend la partie du jour si on recharge la page.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey(todayKey));
-      if (saved) setGame(JSON.parse(saved) as GameState);
-    } catch {
-      /* stockage indisponible : on repart de zéro */
-    }
-  }, [todayKey]);
 
   useEffect(() => {
     if (game.mode !== "daily") return;
@@ -74,12 +75,7 @@ export function Game({ options, todayKey }: { options: PlayerOption[]; todayKey:
   }
 
   function playDaily() {
-    try {
-      const saved = localStorage.getItem(storageKey(todayKey));
-      setGame(saved ? (JSON.parse(saved) as GameState) : freshDaily());
-    } catch {
-      setGame(freshDaily());
-    }
+    setGame(loadDaily(todayKey));
   }
 
   function playRandom() {

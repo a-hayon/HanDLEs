@@ -1,4 +1,4 @@
-import { Game } from "@/components/Game";
+import { GameLoader } from "@/components/GameLoader";
 import { PLAYERS } from "@/data/players";
 import { parisDateKey } from "@/lib/target";
 import { TEAMS } from "@/lib/teams";
@@ -40,7 +40,7 @@ export default function Home() {
           <p className="text-[17px] text-muted">Devine le joueur NBA mystère en 8 essais.</p>
         </header>
 
-        <Game options={options} todayKey={parisDateKey()} />
+        <GameLoader options={options} todayKey={parisDateKey()} />
 
         <footer className="text-center text-[13px] text-muted">
           {options.length} joueurs · effectifs de fin de saison 2025-26
