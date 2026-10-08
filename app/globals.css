@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+
+  --color-ground: #f2f3f5;
+  --color-ink: #15171c;
+  --color-muted: #4a505c;
+  --color-line: #d5d8de;
+  --color-accent: #c2410c;
+  --color-accent-soft: #fff1ea;
+
+  --color-ok: #1f8a4c;
+  --color-near: #f2c14e;
+  --color-near-ink: #2a2100;
+  --color-no: #e6e8ec;
+  --color-no-ink: #3a3f4a;
+
+  --animate-flip: flip 0.42s ease-out both;
+  @keyframes flip {
+    0% {
+      transform: rotateX(90deg);
+      opacity: 0;
+    }
+    100% {
+      transform: rotateX(0);
+      opacity: 1;
+    }
+  }
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
