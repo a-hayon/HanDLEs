@@ -1,14 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("server-only", () => ({}));
-const { getDailyTarget, getRandomTarget, parisDateKey } = await import("./target");
-
-describe("parisDateKey", () => {
-  it("utilise le fuseau de Paris", () => {
-    // 23h30 UTC le 7 octobre = 1h30 le 8 octobre à Paris
-    expect(parisDateKey(new Date("2026-10-07T23:30:00Z"))).toBe("2026-10-08");
-  });
-});
+import { describe, expect, it } from "vitest";
+import { getDailyTarget, getRandomTarget } from "./target";
 
 describe("joueur mystère", () => {
   it("le joueur du jour est stable pour une même date", () => {

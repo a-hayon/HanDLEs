@@ -1,10 +1,9 @@
-import "server-only";
-import type { Player } from "@/lib/types";
+import type { Player } from "../lib/types.js";
 
 /**
  * Effectifs de fin de saison 2025-26 (MVP, saisis à la main).
  * À remplacer plus tard par une base de données alimentée par un script Python.
- * Ce fichier ne doit JAMAIS être importé par un composant client.
+ * Ce fichier ne doit JAMAIS être importé par le front (règle ESLint dans eslint.config.mjs).
  */
 export const PLAYERS: Player[] = [
   { id: 1, name: "Nikola Jokić", team: "DEN", position: "C", heightCm: 211, birthDate: "1995-02-19", number: 15 },

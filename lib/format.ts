@@ -1,4 +1,4 @@
-import type { Position } from "./types";
+import type { Position } from "./types.js";
 
 const POSITION_FR: Record<string, string> = { G: "Arrière", F: "Ailier", C: "Pivot" };
 

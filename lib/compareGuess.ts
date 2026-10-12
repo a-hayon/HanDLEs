@@ -1,5 +1,5 @@
-import { TEAMS } from "./teams";
-import type { Cell, GuessFeedback, Player, Position, Verdict } from "./types";
+import { TEAMS } from "./teams.js";
+import type { Cell, GuessFeedback, Player, Position, Verdict } from "./types.js";
 
 /** Seuils pour la couleur « proche » (jaune). */
 export const TOLERANCE = { heightCm: 5, age: 2, number: 3 } as const;

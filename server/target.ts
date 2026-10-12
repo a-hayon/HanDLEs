@@ -1,7 +1,7 @@
-import "server-only";
 import { createHmac } from "node:crypto";
-import { PLAYERS } from "@/data/players";
-import type { Player } from "./types";
+import { parisDateKey } from "../lib/date.js";
+import type { Player } from "../lib/types.js";
+import { PLAYERS } from "./players.js";
 
 /**
  * Le joueur mystère est dérivé d'un secret serveur (HANDLES_SECRET).
@@ -19,11 +19,6 @@ function secret(): string {
 function pick(seed: string, players: Player[] = PLAYERS): Player {
   const digest = createHmac("sha256", secret()).update(seed).digest();
   return players[digest.readUInt32BE(0) % players.length];
-}
-
-/** Date du jour à Paris au format YYYY-MM-DD : le joueur change à minuit, heure française. */
-export function parisDateKey(now = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);
 }
 
 export function getDailyTarget(dateKey = parisDateKey()): Player {

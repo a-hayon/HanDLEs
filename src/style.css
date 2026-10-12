@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-sans: "Archivo", system-ui, sans-serif;
 
   --color-ground: #f2f3f5;
   --color-ink: #15171c;

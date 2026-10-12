@@ -1,4 +1,4 @@
-import type { Team, TeamCode } from "./types";
+import type { Team, TeamCode } from "./types.js";
 
 export const TEAMS: Record<TeamCode, Team> = {
   ATL: { name: "Atlanta Hawks", conference: "Est", division: "Sud-Est" },

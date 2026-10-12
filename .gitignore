@@ -1,4 +1,4 @@
-# --- Node / Next.js ---
+# --- Node / Vite ---
 /node_modules
 /.pnp
 .pnp.*
@@ -9,11 +9,8 @@
 !.yarn/versions
 
 /coverage
-/.next/
-/out/
-/build
+/dist
 *.tsbuildinfo
-next-env.d.ts
 .vercel
 
 npm-debug.log*
