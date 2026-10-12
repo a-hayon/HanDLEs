@@ -4,39 +4,39 @@ import type { Player } from "./types";
 
 const base: Player = {
   id: 1,
-  name: "Joueur A",
+  name: "Player A",
   team: "DEN",
   position: "C",
   heightCm: 211,
   birthDate: "1995-02-19",
   number: 15,
 };
-const today = new Date(2026, 9, 8); // 8 octobre 2026
+const today = new Date(2026, 9, 8); // October 8, 2026
 
 describe("ageOn", () => {
-  it("compte les années révolues", () => {
+  it("counts full years", () => {
     expect(ageOn("1995-02-19", today)).toBe(31);
-    expect(ageOn("2000-10-09", today)).toBe(25); // anniversaire demain
-    expect(ageOn("2000-10-08", today)).toBe(26); // anniversaire aujourd'hui
+    expect(ageOn("2000-10-09", today)).toBe(25); // birthday tomorrow
+    expect(ageOn("2000-10-08", today)).toBe(26); // birthday today
   });
 });
 
 describe("comparePosition", () => {
-  it("même poste = correct", () => {
+  it("same position = correct", () => {
     expect(comparePosition("G", "G").verdict).toBe("correct");
   });
-  it("un poste en commun = proche", () => {
+  it("one shared position = close", () => {
     expect(comparePosition("G-F", "F").verdict).toBe("near");
     expect(comparePosition("C", "F-C").verdict).toBe("near");
   });
-  it("aucun poste en commun = faux", () => {
+  it("no shared position = wrong", () => {
     expect(comparePosition("G", "C").verdict).toBe("wrong");
     expect(comparePosition("G-F", "C").verdict).toBe("wrong");
   });
 });
 
 describe("compareGuess", () => {
-  it("le bon joueur est correct partout", () => {
+  it("the right player is correct everywhere", () => {
     const fb = compareGuess(base, base, today);
     for (const key of ["team", "conference", "division", "position", "height", "age", "number"] as const) {
       expect(fb[key].verdict).toBe("correct");
@@ -44,7 +44,7 @@ describe("compareGuess", () => {
     }
   });
 
-  it("même division, autre équipe", () => {
+  it("same division, different team", () => {
     const guess = { ...base, id: 2, team: "OKC" as const };
     const fb = compareGuess(guess, base, today);
     expect(fb.team.verdict).toBe("wrong");
@@ -52,12 +52,12 @@ describe("compareGuess", () => {
     expect(fb.division.verdict).toBe("correct");
   });
 
-  it("autre conférence", () => {
+  it("different conference", () => {
     const fb = compareGuess({ ...base, id: 2, team: "BOS" }, base, today);
-    expect(fb.conference).toEqual({ value: "Est", verdict: "wrong" });
+    expect(fb.conference).toEqual({ value: "East", verdict: "wrong" });
   });
 
-  it("taille : proche à 5 cm, avec la bonne flèche", () => {
+  it("height: close within 5 cm, with the right arrow", () => {
     expect(compareGuess({ ...base, heightCm: 206 }, base, today).height).toEqual({
       value: 206,
       verdict: "near",
@@ -70,12 +70,12 @@ describe("compareGuess", () => {
     });
   });
 
-  it("âge : proche à 2 ans", () => {
+  it("age: close within 2 years", () => {
     const fb = compareGuess({ ...base, birthDate: "1997-01-01" }, base, today);
     expect(fb.age).toEqual({ value: 29, verdict: "near", direction: "up" });
   });
 
-  it("numéro : proche à 3", () => {
+  it("number: close within 3", () => {
     expect(compareGuess({ ...base, number: 12 }, base, today).number.verdict).toBe("near");
     expect(compareGuess({ ...base, number: 11 }, base, today).number.verdict).toBe("wrong");
   });

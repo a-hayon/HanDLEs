@@ -30,8 +30,8 @@ export type TeamCode =
   | "UTA"
   | "WAS";
 
-export type Conference = "Est" | "Ouest";
-export type Division = "Atlantique" | "Centrale" | "Sud-Est" | "Nord-Ouest" | "Pacifique" | "Sud-Ouest";
+export type Conference = "East" | "West";
+export type Division = "Atlantic" | "Central" | "Southeast" | "Northwest" | "Pacific" | "Southwest";
 
 export interface Team {
   name: string;
@@ -39,7 +39,7 @@ export interface Team {
   division: Division;
 }
 
-/** G = arrière, F = ailier, C = pivot (notation officielle NBA). */
+/** G = guard, F = forward, C = center (official NBA notation). */
 export type Position = "G" | "F" | "C" | "G-F" | "F-C";
 
 export interface Player {
@@ -48,12 +48,12 @@ export interface Player {
   team: TeamCode;
   position: Position;
   heightCm: number;
-  /** Format ISO YYYY-MM-DD */
+  /** ISO format YYYY-MM-DD */
   birthDate: string;
   number: number;
 }
 
-/** Ce que le navigateur reçoit pour l'autocomplétion : rien qui aide à tricher. */
+/** What the browser gets for autocomplete: nothing that would help cheating. */
 export interface PlayerOption {
   id: number;
   name: string;
@@ -65,7 +65,7 @@ export type Verdict = "correct" | "near" | "wrong";
 export interface Cell<T> {
   value: T;
   verdict: Verdict;
-  /** La bonne valeur est plus haute ("up") ou plus basse ("down"). */
+  /** The correct value is higher ("up") or lower ("down"). */
   direction?: "up" | "down";
 }
 
@@ -94,7 +94,7 @@ export interface PlayerSummary {
 export interface GuessResponse {
   feedback: GuessFeedback;
   solved: boolean;
-  /** Révélé seulement quand la partie est finie. */
+  /** Only revealed once the game is over. */
   answer?: PlayerSummary;
 }
 
