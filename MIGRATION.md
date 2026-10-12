@@ -1,74 +1,74 @@
-# De React/Next.js à Vue 3 — ce qui a changé dans HanDLEs
+# From React/Next.js to Vue 3 — what changed in HanDLEs
 
-Ce guide suit la migration du projet, fichier par fichier, et explique au passage les bases de Vue 3.
-Pour comparer avec l'ancienne version : `git diff main vue -- src/components/GuessInput.vue`, ou
-`git show main:components/GuessInput.tsx`.
-
----
-
-## 1. Vue d'ensemble : où est passé quoi ?
-
-| Avant (Next.js)                             | Après (Vue + Vite)                                        | Pourquoi                                                                                              |
-| ------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `app/layout.tsx` (balises `<html>`, police) | `index.html`                                              | Avec Vite, la page HTML est un vrai fichier ; Vue se monte dans `#app`.                               |
-| _(géré par Next)_                           | `src/main.ts`                                             | On démarre l'appli soi-même : `createApp(App).use(createPinia()).mount("#app")`.                      |
-| `app/page.tsx` (composant serveur)          | `src/App.vue` + `GET /api/players`                        | Pas de composants serveur en Vue « classique » : le front demande la liste à l'API.                   |
-| `app/api/guess/route.ts`                    | `server/app.ts` (Hono)                                    | Vite ne fait que du front ; l'API devient une petite appli Hono à part (voir §1 bis).                 |
-| `components/GameLoader.tsx` (`ssr: false`)  | _supprimé_                                                | Pas de rendu serveur ⇒ tout s'exécute dans le navigateur, `localStorage` est toujours dispo.          |
-| `components/Game.tsx` (état + affichage)    | `src/stores/game.ts` (état) + `GameBoard.vue` (affichage) | L'état de la partie est sorti dans un store Pinia (voir §8).                                          |
-| `EndBanner` (dans `Game.tsx`)               | `src/components/EndBanner.vue`                            | En Vue, c'est **un composant par fichier** `.vue`.                                                    |
-| `Legend.tsx`, `Game.tsx`                    | `ColorLegend.vue`, `GameBoard.vue`                        | Règle du style guide Vue : noms en plusieurs mots (évite les conflits avec les balises HTML).         |
-| `import "server-only"`                      | règle ESLint `no-restricted-imports` sur `src/**`         | `server-only` est propre à React ; ici ESLint interdit à `src/` d'importer `server/`.                 |
-| `lib/*` (logique pure)                      | `lib/*` **presque inchangé**                              | Du TypeScript sans React n'a pas besoin d'être migré. Seuls les imports ont pris `.js` (voir §1 bis). |
-
-> 💡 **Leçon d'architecture** : la logique de `lib/` (comparaison, types, formatage) a survécu sans modification
-> et ses tests passent tels quels. Séparer la logique métier du framework, c'est ce qui rend une migration facile.
-
-### 1 bis. Une API, deux façons de la lancer
-
-Next.js déployait tout seul `app/api/guess/route.ts` en **fonction serverless** sur Vercel. Sans Next, on le fait nous-mêmes :
-
-- `server/app.ts` définit les routes Hono, sans rien démarrer ;
-- `server/index.ts` l'écoute sur un port : c'est un **serveur Node** classique (`npm run dev`, `npm start`) ;
-- `api/index.ts` l'enveloppe dans `handle(app)` : c'est une **fonction serverless**, exécutée par Vercel à chaque requête
-  `/api/*` (redirigées par `vercel.json`).
-
-Sur Vercel, Node exécute le TypeScript compilé en ESM, **sans bundler** : l'alias `@/` n'existe pas et chaque import
-relatif doit avoir son extension. D'où les imports `../lib/teams.js` dans `server/` et `lib/` (TypeScript comprend que
-`.js` désigne le fichier `.ts`). Le front, lui, est compilé par Vite, donc `src/` garde l'alias `@/`.
+This guide walks through the project's migration, file by file, and explains the basics of Vue 3 along the way.
+To compare with the old version, read any file from the last Next.js commit, e.g.
+`git show f66dc4f:components/GuessInput.tsx`.
 
 ---
 
-## 2. Le composant monofichier (`.vue`)
+## 1. Overview: where did everything go?
 
-Un fichier `.vue` (SFC, _Single File Component_) a jusqu'à trois blocs :
+| Before (Next.js)                           | After (Vue + Vite)                                       | Why                                                                                       |
+| ------------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `app/layout.tsx` (`<html>` tags, font)     | `index.html`                                             | With Vite, the HTML page is a real file; Vue mounts into `#app`.                          |
+| _(handled by Next)_                        | `src/main.ts`                                            | We start the app ourselves: `createApp(App).use(createPinia()).mount("#app")`.            |
+| `app/page.tsx` (server component)          | `src/App.vue` + `GET /api/players`                       | No server components in "plain" Vue: the front end asks the API for the list.             |
+| `app/api/guess/route.ts`                   | `server/app.ts` (Hono)                                   | Vite only does front end; the API becomes a small standalone Hono app (see §1b).          |
+| `components/GameLoader.tsx` (`ssr: false`) | _removed_                                                | No server rendering ⇒ everything runs in the browser, `localStorage` is always available. |
+| `components/Game.tsx` (state + display)    | `src/stores/game.ts` (state) + `GameBoard.vue` (display) | The game state was moved into a Pinia store (see §9).                                     |
+| `EndBanner` (inside `Game.tsx`)            | `src/components/EndBanner.vue`                           | In Vue, it's **one component per** `.vue` **file**.                                       |
+| `Legend.tsx`, `Game.tsx`                   | `ColorLegend.vue`, `GameBoard.vue`                       | Vue style guide rule: multi-word names (avoids clashes with HTML tags).                   |
+| `import "server-only"`                     | ESLint `no-restricted-imports` rule on `src/**`          | `server-only` is React-specific; here ESLint forbids `src/` from importing `server/`.     |
+| `lib/*` (pure logic)                       | `lib/*` **almost unchanged**                             | TypeScript without React doesn't need migrating. Only the imports gained `.js` (see §1b). |
+
+> 💡 **Architecture lesson**: the logic in `lib/` (comparison, types, formatting) survived unchanged
+> and its tests pass as they are. Keeping business logic separate from the framework is what makes a migration easy.
+
+### 1b. One API, two ways to run it
+
+Next.js automatically deployed `app/api/guess/route.ts` as a **serverless function** on Vercel. Without Next, we do it ourselves:
+
+- `server/app.ts` defines the Hono routes, without starting anything;
+- `server/index.ts` listens on a port: a classic **Node server** (`npm run dev`, `npm start`);
+- `api/index.ts` wraps it in `handle(app)`: a **serverless function** that Vercel runs for every `/api/*`
+  request (rewritten by `vercel.json`).
+
+On Vercel, Node runs the TypeScript compiled to ESM **without a bundler**: the `@/` alias doesn't exist and every
+relative import needs its extension. Hence the `../lib/teams.js` imports in `server/` and `lib/` (TypeScript understands
+that `.js` points to the `.ts` file). The front end is bundled by Vite, so `src/` keeps the `@/` alias.
+
+---
+
+## 2. The single-file component (`.vue`)
+
+A `.vue` file (SFC, _Single File Component_) has up to three blocks:
 
 ```vue
 <script setup lang="ts">
-// La logique : imports, état, fonctions. Tout ce qui est déclaré ici est utilisable dans le template.
+// The logic: imports, state, functions. Everything declared here can be used in the template.
 </script>
 
 <template>
-  <!-- Le HTML, avec la syntaxe de template Vue (pas du JSX). -->
+  <!-- The HTML, using Vue's template syntax (not JSX). -->
 </template>
 
 <style scoped>
-/* Optionnel : du CSS limité à ce composant. On ne s'en sert pas ici grâce à Tailwind. */
+/* Optional: CSS scoped to this component. We don't need it here thanks to Tailwind. */
 </style>
 ```
 
-Différence clé avec React : **en React, le composant est une fonction qui se ré-exécute à chaque rendu.**
-En Vue, `<script setup>` **ne s'exécute qu'une seule fois**, à la création du composant. C'est le
-_template_ qui est ré-évalué quand les données réactives changent. Conséquences :
+Key difference with React: **in React, a component is a function that re-runs on every render.**
+In Vue, `<script setup>` **runs only once**, when the component is created. It's the
+_template_ that gets re-evaluated when reactive data changes. As a result:
 
-- pas de `useCallback`, pas de tableau de dépendances : une fonction déclarée dans `<script setup>` est créée une fois ;
-- pas de « règles des hooks » : on peut appeler `ref()` / `computed()` dans un `if`, une fonction, un autre fichier…
+- no `useCallback`, no dependency arrays: a function declared in `<script setup>` is created once;
+- no "rules of hooks": you can call `ref()` / `computed()` inside an `if`, a function, another file…
 
-`ColorLegend.vue` n'a même pas de `<script>` : un composant purement statique n'est qu'un `<template>`.
+`ColorLegend.vue` doesn't even have a `<script>`: a purely static component is just a `<template>`.
 
 ---
 
-## 3. La réactivité : `ref` remplace `useState`
+## 3. Reactivity: `ref` replaces `useState`
 
 ```ts
 // React (Game.tsx)
@@ -80,20 +80,20 @@ const pending = ref(false);
 pending.value = true;
 ```
 
-- `ref(x)` crée une **boîte réactive**. On lit / écrit son contenu via `.value` dans le code TypeScript.
-- **Dans le template, pas de `.value`** : Vue « déballe » les refs automatiquement (`{{ query }}`, pas `{{ query.value }}`).
-- Pas de setter : on assigne directement, Vue détecte l'écriture et met à jour ce qui dépend de la valeur.
+- `ref(x)` creates a **reactive box**. In TypeScript code, you read / write its content through `.value`.
+- **No `.value` in the template**: Vue unwraps refs automatically (`{{ query }}`, not `{{ query.value }}`).
+- No setter: you assign directly, Vue detects the write and updates whatever depends on the value.
 
-### Muter au lieu de recopier
+### Mutate instead of copying
 
-En React il faut créer un nouvel objet pour déclencher un rendu :
+In React you must create a new object to trigger a render:
 
 ```ts
 // React
 setGame((g) => ({ ...g, guesses: [...g.guesses, data.feedback], solved: data.solved }));
 ```
 
-Vue enveloppe les objets dans un _Proxy_ qui intercepte les modifications. On peut donc muter directement :
+Vue wraps objects in a _Proxy_ that intercepts changes. So you can mutate directly:
 
 ```ts
 // Vue
@@ -101,14 +101,14 @@ game.value.guesses.push(data.feedback);
 game.value.solved = data.solved;
 ```
 
-### `ref` ou `reactive` ?
+### `ref` or `reactive`?
 
-`reactive({ ... })` existe aussi (objet réactif sans `.value`), mais on ne peut pas le réassigner en entier et on perd
-la réactivité si on le déstructure. La recommandation officielle actuelle : **utiliser `ref` partout** — c'est ce qu'on fait ici.
+`reactive({ ... })` also exists (a reactive object without `.value`), but you can't reassign it as a whole and it
+loses reactivity when destructured. The current official recommendation: **use `ref` everywhere** — which is what we do here.
 
 ---
 
-## 4. `computed` remplace `useMemo`
+## 4. `computed` replaces `useMemo`
 
 ```ts
 // React (GuessInput.tsx)
@@ -122,19 +122,19 @@ const suggestions = computed(() => {
 });
 ```
 
-**Pas de tableau de dépendances** : Vue enregistre tout seul les valeurs réactives lues pendant le calcul
-(`query`, `props.options`, `props.excluded`) et ne recalcule que si l'une d'elles change. Le résultat est
-mis en cache. Un `computed` se lit aussi avec `.value` dans le script (`suggestions.value.length`).
+**No dependency array**: Vue records by itself the reactive values read during the computation
+(`query`, `props.options`, `props.excluded`) and only recomputes when one of them changes. The result is
+cached. A `computed` is also read with `.value` in the script (`suggestions.value.length`).
 
-Dans React, `over`, `guessedIds` et `tryNumber` étaient recalculés à chaque rendu. Dans le store, ce sont des `computed`.
+In React, `over`, `guessedIds` and `tryNumber` were recomputed on every render. In the store, they are `computed`.
 
 ---
 
-## 5. `watch` / `onMounted` remplacent `useEffect`
+## 5. `watch` / `onMounted` replace `useEffect`
 
-`useEffect` faisait deux métiers différents. Vue a un outil pour chacun.
+`useEffect` did two different jobs. Vue has one tool for each.
 
-**Réagir à un changement de donnée → `watch`** (sauvegarde de la partie dans `stores/game.ts`) :
+**React to a data change → `watch`** (saving the game in `stores/game.ts`):
 
 ```ts
 // React
@@ -152,41 +152,41 @@ watch(
 );
 ```
 
-`deep: true` est nécessaire parce qu'on **mute** `game` (`guesses.push`) au lieu de le remplacer : sans ça,
-le `watch` ne surveille que la référence de l'objet. (`watchEffect(() => …)` existe aussi : il suit
-automatiquement tout ce qu'il lit, comme un `computed` qui ferait un effet de bord.)
+`deep: true` is needed because we **mutate** `game` (`guesses.push`) instead of replacing it: without it,
+`watch` only tracks the object's reference. (`watchEffect(() => …)` also exists: it automatically tracks
+everything it reads, like a `computed` that performs a side effect.)
 
-**Faire quelque chose quand le composant apparaît → hooks de cycle de vie** (`App.vue`) :
+**Do something when the component appears → lifecycle hooks** (`App.vue`):
 
 ```ts
 onMounted(() => store.loadPlayers());
 ```
 
-Les autres : `onBeforeMount`, `onUpdated`, `onUnmounted` (pour nettoyer un `setInterval`, un listener…).
+The others: `onBeforeMount`, `onUpdated`, `onUnmounted` (to clean up a `setInterval`, a listener…).
 
 ---
 
-## 6. La syntaxe des templates (le plus gros changement visuel)
+## 6. Template syntax (the biggest visual change)
 
-| Besoin               | React (JSX)                               | Vue (template)                                         |
-| -------------------- | ----------------------------------------- | ------------------------------------------------------ |
-| Afficher une valeur  | `{store.error}`                           | `{{ store.error }}`                                    |
-| Attribut dynamique   | `disabled={pending}`                      | `:disabled="pending"` (raccourci de `v-bind:disabled`) |
-| Événement            | `onClick={playDaily}`                     | `@click="playDaily"` (raccourci de `v-on:click`)       |
-| Condition            | `{!over && <GuessInput />}`               | `<GuessInput v-if="!over" />`                          |
-| Sinon                | `cond ? <A/> : <B/>`                      | `<A v-if="cond" />` puis `<B v-else />` / `v-else-if`  |
-| Boucle               | `{items.map((o, i) => <li key={o.id}>…)}` | `<li v-for="(o, i) in items" :key="o.id">…`            |
-| Boucle sur un nombre | `Array.from({ length: 8 }, (_, i) => …)`  | `v-for="i in 8"` (i va de **1** à 8)                   |
-| Classe CSS           | `className={...}`                         | `class="..."` (statique) + `:class="..."` (dynamique)  |
-| Style inline         | `style={{ animationDelay: "90ms" }}`      | `:style="{ animationDelay: '90ms' }"`                  |
-| Attribut `for`       | `htmlFor`                                 | `for` — c'est du vrai HTML                             |
+| Need               | React (JSX)                               | Vue (template)                                          |
+| ------------------ | ----------------------------------------- | ------------------------------------------------------- |
+| Display a value    | `{store.error}`                           | `{{ store.error }}`                                     |
+| Dynamic attribute  | `disabled={pending}`                      | `:disabled="pending"` (shorthand for `v-bind:disabled`) |
+| Event              | `onClick={playDaily}`                     | `@click="playDaily"` (shorthand for `v-on:click`)       |
+| Condition          | `{!over && <GuessInput />}`               | `<GuessInput v-if="!over" />`                           |
+| Else               | `cond ? <A/> : <B/>`                      | `<A v-if="cond" />` then `<B v-else />` / `v-else-if`   |
+| Loop               | `{items.map((o, i) => <li key={o.id}>…)}` | `<li v-for="(o, i) in items" :key="o.id">…`             |
+| Loop over a number | `Array.from({ length: 8 }, (_, i) => …)`  | `v-for="i in 8"` (i goes from **1** to 8)               |
+| CSS class          | `className={...}`                         | `class="..."` (static) + `:class="..."` (dynamic)       |
+| Inline style       | `style={{ animationDelay: "90ms" }}`      | `:style="{ animationDelay: '90ms' }"`                   |
+| `for` attribute    | `htmlFor`                                 | `for` — it's real HTML                                  |
 
-Dans les guillemets d'une directive (`:disabled="…"`, `v-if="…"`), on écrit **une expression JavaScript**.
+Inside a directive's quotes (`:disabled="…"`, `v-if="…"`), you write **a JavaScript expression**.
 
-### `:class`, bien plus pratique que les template strings
+### `:class`, much handier than template strings
 
-`class` et `:class` peuvent coexister sur la même balise et sont fusionnés. `:class` accepte une chaîne, un
-tableau, ou un **objet** `{ classe: condition }` :
+`class` and `:class` can live on the same tag and get merged. `:class` accepts a string, an
+array, or an **object** `{ className: condition }`:
 
 ```vue
 <!-- React -->
@@ -196,60 +196,65 @@ tableau, ou un **objet** `{ classe: condition }` :
 <li class="flex ..." :class="{ 'bg-accent-soft': i === active }">
 ```
 
-### `v-if` ou `v-show` ?
+### `v-if` or `v-show`?
 
-`v-if` ajoute/retire l'élément du DOM ; `v-show` le garde et bascule `display: none`. `v-show` vaut mieux pour
-quelque chose qu'on affiche/masque très souvent. Question classique d'entretien !
+`v-if` adds/removes the element from the DOM; `v-show` keeps it and toggles `display: none`. `v-show` is better
+for something you show/hide very often. A classic interview question!
 
-> ⚠️ Ne jamais mettre `v-if` et `v-for` sur le même élément : filtrer plutôt dans un `computed`
-> (c'est ce que fait `suggestions`).
+> ⚠️ Never put `v-if` and `v-for` on the same element: filter in a `computed` instead
+> (that's what `suggestions` does).
 
 ---
 
-## 7. Formulaires et événements
+## 7. Forms and events
 
-### `v-model` : la liaison bidirectionnelle
+### `v-model`: two-way binding
 
 ```tsx
-// React : input contrôlé, il faut câbler les deux sens
+// React: controlled input, you wire up both directions
 <input value={query} onChange={(e) => setQuery(e.target.value)} />
 ```
 
 ```vue
-<!-- Vue : v-model fait les deux d'un coup -->
+<!-- Vue: v-model does both at once -->
 <input v-model="query" />
 ```
 
-`v-model="query"` équivaut à `:value="query" @input="query = $event.target.value"`. On a gardé un
-`@input="active = 0"` à côté pour remettre la sélection en haut à chaque frappe.
+`v-model="query"` is equivalent to `:value="query" @input="query = $event.target.value"`. We kept an
+`@input="active = 0"` next to it to move the selection back to the top on every keystroke.
 
-### Les modificateurs d'événements
+### Event modifiers
 
-Le `onKeyDown` de React, avec son `if / else if` sur `e.key` et ses `e.preventDefault()`, devient en Vue :
+React's `onKeyDown`, with its `if / else if` on `e.key` and its `e.preventDefault()` calls, becomes in Vue:
 
 ```vue
-@keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter.prevent="pickActive" @keydown.esc="query =
-''" @mousedown.prevent="pick(o)"
+<input
+  v-model="query"
+  @keydown.down.prevent="move(1)"
+  @keydown.up.prevent="move(-1)"
+  @keydown.enter.prevent="pickActive"
+  @keydown.esc="query = ''"
+/>
 ```
 
-`.down` / `.enter` / `.esc` filtrent la touche, `.prevent` appelle `preventDefault()`. Il existe aussi
+`.down` / `.enter` / `.esc` filter the key, `.prevent` calls `preventDefault()`. There are also
 `.stop` (`stopPropagation`), `.once`, `.self`, `.ctrl`…
 
 ---
 
-## 8. Communication entre composants : props et emits
+## 8. Component communication: props and emits
 
-**Props (parent → enfant)** : on les déclare avec `defineProps`, avec un type TypeScript.
+**Props (parent → child)**: declared with `defineProps`, using a TypeScript type.
 
 ```ts
 // EndBanner.vue
 const props = defineProps<{ solved: boolean; answer: PlayerSummary; tries: number }>();
 ```
 
-Les props sont **en lecture seule** : un enfant ne modifie jamais une prop, il prévient son parent.
+Props are **read-only**: a child never modifies a prop, it notifies its parent.
 
-**Emits (enfant → parent)** : c'est la grande différence avec React. En React, le parent passe une
-**fonction** en prop (`onPick={submit}`). En Vue, l'enfant **émet un événement** et le parent l'écoute avec `@` :
+**Emits (child → parent)**: this is the big difference with React. In React, the parent passes a
+**function** as a prop (`onPick={submit}`). In Vue, the child **emits an event** and the parent listens with `@`:
 
 ```ts
 // GuessInput.vue
@@ -262,117 +267,132 @@ emit("pick", o.id);
 <GuessInput :options="store.players" :excluded="store.guessedIds" @pick="store.submit" />
 ```
 
-On appelle ça le **flux de données à sens unique** : les données descendent par les props, les événements remontent par les emits.
+This is called **one-way data flow**: data goes down through props, events go up through emits.
 
-> `defineProps`, `defineEmits` sont des _macros_ du compilateur : pas besoin de les importer.
+> `defineProps` and `defineEmits` are compiler _macros_: no need to import them.
 
 ---
 
-## 9. Pinia : le store de la partie
+## 9. Pinia: the game store
 
-### C'est quoi, « l'état de la partie » ?
+### What is "the game state"?
 
-Ce sont les données qui décrivent où en est le joueur : le mode (joueur du jour / aléatoire), les essais
-déjà faits, si c'est gagné, la réponse révélée, s'il y a une requête en cours, un message d'erreur.
-Dans la version React, tout ça vivait dans des `useState` à l'intérieur de `Game.tsx`.
+It's the data describing where the player stands: the mode (daily player / random), the guesses
+made so far, whether it's won, the revealed answer, whether a request is in flight, an error message.
+In the React version, all of this lived in `useState` calls inside `Game.tsx`.
 
-### C'est quoi, Pinia ?
+### What is Pinia?
 
-**Pinia est la bibliothèque officielle de gestion d'état (_state management_) de Vue**, l'équivalent de
-Redux / Zustand côté React. Un **store** est un objet réactif **global** : n'importe quel composant peut le lire
-et appeler ses actions avec `useGameStore()`, sans faire passer les données de parent en enfant en props
-(ce qu'on appelle le _prop drilling_).
+**Pinia is Vue's official state management library**, the equivalent of
+Redux / Zustand on the React side. A **store** is a **global** reactive object: any component can read it
+and call its actions with `useGameStore()`, without passing data down from parent to child through props
+(what's called _prop drilling_).
 
-Un store contient trois choses :
+A store holds three things:
 
-| Notion      | Dans `stores/game.ts`                              | Équivalent composant   |
+| Concept     | In `stores/game.ts`                                | Component equivalent   |
 | ----------- | -------------------------------------------------- | ---------------------- |
-| **state**   | `players`, `game`, `pending`, `error` (des `ref`)  | `useState` / `ref`     |
-| **getters** | `over`, `guessedIds`, `tryNumber` (des `computed`) | `useMemo` / `computed` |
-| **actions** | `loadPlayers`, `submit`, `playDaily`, `playRandom` | fonctions              |
+| **state**   | `players`, `game`, `pending`, `error` (`ref`s)     | `useState` / `ref`     |
+| **getters** | `over`, `guessedIds`, `tryNumber` (`computed`s)    | `useMemo` / `computed` |
+| **actions** | `loadPlayers`, `submit`, `playDaily`, `playRandom` | functions              |
 
-On l'a écrit en **« setup store »** : c'est exactement la même syntaxe qu'un `<script setup>`. Il existe aussi
-une syntaxe « options store » (`state: () => ({...}), getters: {...}, actions: {...}`) qu'on voit dans les vieux projets.
+We wrote it as a **"setup store"**: exactly the same syntax as a `<script setup>`. There is also
+an "options store" syntax (`state: () => ({...}), getters: {...}, actions: {...}`) that you'll see in older projects.
 
-Le bénéfice ici : `App.vue` (pied de page avec le nombre de joueurs) et `GameBoard.vue` partagent les mêmes données
-sans rien se passer. Bonus : l'extension navigateur **Vue DevTools** affiche le store et son historique — à essayer !
+The benefit here: `App.vue` (footer with the player count) and `GameBoard.vue` share the same data
+without passing anything to each other. Bonus: the **Vue DevTools** browser extension shows the store and its history — give it a try!
 
-> ⚠️ Piège classique : `const { pending } = useGameStore()` **casse la réactivité** (on copie la valeur).
-> Il faut écrire `store.pending`, ou `const { pending } = storeToRefs(useGameStore())`.
+> ⚠️ Classic pitfall: `const { pending } = useGameStore()` **breaks reactivity** (it copies the value).
+> Write `store.pending`, or `const { pending } = storeToRefs(useGameStore())`.
 
-### Store ou props ? Le choix fait ici
+### Store or props? The choice made here
 
-- `GameBoard.vue` utilise le store : c'est le composant « intelligent » qui pilote la partie.
-- `GuessInput`, `GuessGrid`, `EndBanner` ne connaissent **pas** le store : ils reçoivent des props et émettent
-  des événements. Ils restent réutilisables et faciles à tester (voir `GuessInput.test.ts`).
+- `GameBoard.vue` uses the store: it's the "smart" component driving the game.
+- `GuessInput`, `GuessGrid`, `EndBanner` do **not** know about the store: they receive props and emit
+  events. They stay reusable and easy to test (see `GuessInput.test.ts`).
 
-### Et les composables ?
+### What about composables?
 
-Une fonction `useQuelqueChose()` qui utilise `ref` / `computed` / `watch` et retourne des valeurs réactives
-s'appelle un **composable** (l'équivalent d'un custom hook React). La différence avec un store Pinia : chaque appel
-d'un composable crée **un nouvel état**, alors qu'un store est **partagé** (une seule instance).
-
----
-
-## 10. Ce qui a disparu avec Next.js
-
-- **`"use client"`** : sans rendu serveur, tout est « client ».
-- **`GameLoader` / `dynamic(..., { ssr: false })`** : il servait à éviter que le HTML du serveur ne diffère
-  de celui du client à cause de `localStorage`. Le problème n'existe plus.
-- **Le composant serveur `page.tsx`** : remplacé par l'appel `GET /api/players` dans `onMounted`.
-- **`next/font`** : la police Archivo est chargée par un `<link>` Google Fonts dans `index.html`.
-- **Le routage par fichiers** : l'appli n'a qu'une page. Pour plusieurs pages, on ajouterait **vue-router**
-  (voir les exercices).
-
-`useId()` existe aussi en Vue (depuis la 3.5) et s'utilise pareil.
+A `useSomething()` function that uses `ref` / `computed` / `watch` and returns reactive values
+is called a **composable** (the equivalent of a React custom hook). The difference with a Pinia store: each call
+to a composable creates **new state**, whereas a store is **shared** (a single instance).
 
 ---
 
-## 11. Tester un composant Vue
+## 10. What went away with Next.js
 
-`src/components/GuessInput.test.ts` monte le composant avec **Vue Test Utils** dans un faux DOM (happy-dom) :
+- **`"use client"`**: without server rendering, everything is "client".
+- **`GameLoader` / `dynamic(..., { ssr: false })`**: it prevented the server HTML from differing from
+  the client's because of `localStorage`. That problem no longer exists.
+- **The `page.tsx` server component**: replaced by the `GET /api/players` call in `onMounted`.
+- **`next/font`**: the Archivo font is loaded through a Google Fonts `<link>` in `index.html`.
+- **File-based routing**: the app has a single page. For several pages, you'd add **vue-router**
+  (see the exercises).
+
+`useId()` also exists in Vue (since 3.5) and works the same way.
+
+---
+
+## 11. Testing a Vue component
+
+`src/components/GuessInput.test.ts` mounts the component with **Vue Test Utils** in a fake DOM (happy-dom):
 
 ```ts
 const wrapper = mount(GuessInput, { props: { options, excluded: new Set() } });
-await wrapper.get("input").setValue("doncic"); // tape dans l'input
+await wrapper.get("input").setValue("doncic"); // types into the input
 await wrapper.get("input").trigger("keydown", { key: "Enter" });
-expect(wrapper.emitted("pick")).toEqual([[6]]); // vérifie l'événement émis
+expect(wrapper.emitted("pick")).toEqual([[6]]); // checks the emitted event
 ```
 
-Le `await` est important : Vue regroupe les mises à jour du DOM et les applique au « tick » suivant
-(c'est aussi le rôle de `nextTick()`).
+The `await` matters: Vue batches DOM updates and applies them on the next "tick"
+(which is also what `nextTick()` is for).
 
 ---
 
-## 12. Questions fréquentes en entretien
+## 12. Responsive layout
 
-1. **Options API vs Composition API ?** L'Options API (`data()`, `methods`, `computed: {}`, `mounted()`) est
-   l'ancienne façon d'écrire des composants, encore très présente dans les projets Vue 2 et dans beaucoup de
-   codebases. La Composition API (`<script setup>`, `ref`, `computed`) regroupe le code par fonctionnalité et
-   se partage via des composables. Ce projet utilise la Composition API. Regarde à quoi ressemble `GuessInput`
-   en Options API pour savoir lire les deux.
-2. **Comment marche la réactivité ?** Proxies JS : à la lecture, Vue enregistre qui dépend de la valeur ; à l'écriture,
-   il prévient ces dépendances (template, `computed`, `watch`).
-3. **`computed` vs méthode ?** Un `computed` est mis en cache tant que ses dépendances ne changent pas, une méthode
-   appelée dans le template est ré-exécutée à chaque rendu.
-4. **`watch` vs `computed` ?** `computed` pour **dériver une valeur**, `watch` pour **déclencher un effet de bord**
-   (requête, `localStorage`, log…).
-5. **Pourquoi `:key` dans un `v-for` ?** Pour que Vue sache quel élément du DOM correspond à quelle donnée quand
-   la liste change (même raison que `key` en React). Ne pas utiliser l'index si la liste peut être réordonnée.
-6. **Comment un enfant modifie-t-il une donnée du parent ?** Il ne la modifie pas : il `emit` un événement
-   (ou on utilise `v-model` sur un composant, avec `defineModel()`).
-7. **`v-if` vs `v-show` ?** Voir §6.
+`GuessGrid.vue` used to be an 8-column table with a minimum width of 780px, so small screens had to scroll sideways.
+It now has two layouts, switched with Tailwind's `lg:` prefix (≥ 1024px), without any JavaScript:
+
+- **below 1024px**: one card per guess — the player on top, then the cells on two lines
+  (4 categorical criteria, then 3 numeric ones), each with its own small label;
+- **from 1024px up**: the table, with a header row.
+
+The trick is `lg:contents`: the wrappers that build the two lines on mobile get `display: contents` on large screens.
+They then generate no box, and their cells become direct children of the table row's grid.
 
 ---
 
-## 13. Exercices pour progresser sur ce projet
+## 13. Common interview questions
 
-Classés du plus simple au plus ambitieux :
+1. **Options API vs Composition API?** The Options API (`data()`, `methods`, `computed: {}`, `mounted()`) is
+   the older way to write components, still very common in Vue 2 projects and many
+   codebases. The Composition API (`<script setup>`, `ref`, `computed`) groups code by feature and
+   is shared through composables. This project uses the Composition API. Look at what `GuessInput` would
+   look like with the Options API so you can read both.
+2. **How does reactivity work?** JS Proxies: on read, Vue records who depends on the value; on write,
+   it notifies those dependents (template, `computed`, `watch`).
+3. **`computed` vs method?** A `computed` is cached as long as its dependencies don't change; a method
+   called in the template re-runs on every render.
+4. **`watch` vs `computed`?** `computed` to **derive a value**, `watch` to **trigger a side effect**
+   (request, `localStorage`, logging…).
+5. **Why `:key` in a `v-for`?** So Vue knows which DOM element matches which piece of data when
+   the list changes (same reason as `key` in React). Don't use the index if the list can be reordered.
+6. **How does a child change the parent's data?** It doesn't: it `emit`s an event
+   (or you use `v-model` on a component, with `defineModel()`).
+7. **`v-if` vs `v-show`?** See §6.
 
-1. **`<Transition>`** : faire apparaître `EndBanner` en fondu avec le composant intégré `<Transition>` de Vue.
-2. **`defineModel`** : transformer `GuessInput` pour que le parent puisse lire la saisie avec `v-model`.
-3. **Composable** : extraire la navigation clavier de `GuessInput` dans `src/composables/useListNavigation.ts`.
-4. **Statistiques** : un second store Pinia `useStatsStore` (parties jouées, victoires, série en cours), sauvegardé
-   dans `localStorage`, alimenté quand `game.over` passe à `true` (un `watch` !).
-5. **Partage** : un bouton qui copie la grille d'emojis 🟩🟨⬜ façon Wordle (`navigator.clipboard`).
-6. **vue-router** : ajouter une page `/regles` et une page `/stats`, avec un `<RouterLink>` dans l'en-tête.
+---
+
+## 14. Exercises to improve this project
+
+From easiest to most ambitious:
+
+1. **`<Transition>`**: fade `EndBanner` in with Vue's built-in `<Transition>` component.
+2. **`defineModel`**: turn `GuessInput` into a component whose parent can read the input with `v-model`.
+3. **Composable**: extract `GuessInput`'s keyboard navigation into `src/composables/useListNavigation.ts`.
+4. **Random game persistence**: also save the ongoing random game, so a refresh doesn't lose it.
+5. **Stats**: a second Pinia store `useStatsStore` (games played, wins, current streak), saved
+   in `localStorage`, updated when `game.over` turns `true` (a `watch`!).
+6. **Sharing**: a button that copies a Wordle-style 🟩🟨⬜ emoji grid (`navigator.clipboard`).
+7. **vue-router**: add a `/rules` page and a `/stats` page, with a `<RouterLink>` in the header.

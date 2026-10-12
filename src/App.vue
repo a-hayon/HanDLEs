@@ -5,7 +5,7 @@ import { useGameStore } from "./stores/game";
 
 const store = useGameStore();
 
-// Avant, page.tsx (composant serveur) calculait la liste. Ici on la demande à l'API au montage.
+// page.tsx (a server component) used to build this list. Here we fetch it from the API on mount.
 onMounted(() => store.loadPlayers());
 </script>
 
@@ -31,13 +31,13 @@ onMounted(() => store.loadPlayers());
             Han<span class="text-accent">DLE</span>s
           </h1>
         </div>
-        <p class="text-[17px] text-muted">Devine le joueur NBA mystère en 8 essais.</p>
+        <p class="text-[17px] text-muted">Guess the mystery NBA player in 8 tries.</p>
       </header>
 
       <GameBoard />
 
       <footer class="text-center text-[13px] text-muted">
-        {{ store.players.length }} joueurs · effectifs de fin de saison 2025-26
+        {{ store.players.length }} players · 2025-26 end-of-season rosters
       </footer>
     </div>
   </main>

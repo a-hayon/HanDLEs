@@ -18,18 +18,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# --- Variables d'environnement (secrets) ---
+# --- Environment variables (secrets) ---
 .env*
 !.env.example
 
-# --- Python (futur script de synchro des joueurs) ---
+# --- Python (future player sync script) ---
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 .pytest_cache/
 
-# --- Divers ---
+# --- Misc ---
 .DS_Store
 *.pem
 .idea/

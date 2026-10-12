@@ -6,19 +6,19 @@ export default defineConfig([
   tseslint.configs.recommended,
   pluginVue.configs["flat/recommended"],
   {
-    // Dans les fichiers .vue, le <script lang="ts"> est analysé par le parser TypeScript.
+    // In .vue files, <script lang="ts"> is parsed by the TypeScript parser.
     files: ["**/*.vue"],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
   {
-    // Le code du navigateur ne doit jamais importer server/ (données des joueurs, secret).
+    // Browser code must never import server/ (player data, secret).
     files: ["src/**"],
     rules: {
       "no-restricted-imports": ["error", { patterns: ["@/server/*", "**/server/*"] }],
     },
   },
   {
-    // Le formatage est géré par Prettier.
+    // Formatting is handled by Prettier.
     rules: {
       "vue/max-attributes-per-line": "off",
       "vue/singleline-html-element-content-newline": "off",

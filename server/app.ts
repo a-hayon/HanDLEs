@@ -7,38 +7,38 @@ import { getPlayer, PLAYERS } from "./players.js";
 import { getDailyTarget, getRandomTarget } from "./target.js";
 
 /**
- * L'API, sans démarrage de serveur : elle est utilisée par server/index.ts (Node, en local)
- * et par api/index.ts (fonction serverless sur Vercel).
+ * The API, without starting a server: it is used by server/index.ts (Node, locally)
+ * and by api/index.ts (serverless function on Vercel).
  */
 const app = new Hono();
 
-/** Liste pour l'autocomplétion : on n'envoie au navigateur que les noms, jamais les attributs. */
+/** Autocomplete list: the browser only ever gets names, never player attributes. */
 const options: PlayerOption[] = PLAYERS.map((p) => ({
   id: p.id,
   name: p.name,
   teamName: TEAMS[p.team].name,
-})).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+})).sort((a, b) => a.name.localeCompare(b.name, "en"));
 
 app.get("/api/players", (c) => c.json(options));
 
 const Body = z.object({
   playerId: z.number().int().positive(),
-  /** Numéro de l'essai (1 à 8) : au dernier, on révèle la réponse. */
+  /** Guess number (1 to 8): the answer is revealed on the last one. */
   attempt: z.number().int().min(1).max(MAX_TRIES),
-  /** Absent = joueur du jour ; présent = partie aléatoire. */
+  /** Missing = daily player; present = random game. */
   gameId: z.uuid().optional(),
 });
 
 app.post("/api/guess", async (c) => {
   const parsed = Body.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) {
-    return c.json({ error: "Requête invalide" }, 400);
+    return c.json({ error: "Invalid request" }, 400);
   }
   const { playerId, attempt, gameId } = parsed.data;
 
   const guess = getPlayer(playerId);
   if (!guess) {
-    return c.json({ error: "Joueur inconnu" }, 404);
+    return c.json({ error: "Unknown player" }, 404);
   }
 
   const target = gameId ? getRandomTarget(gameId) : getDailyTarget();

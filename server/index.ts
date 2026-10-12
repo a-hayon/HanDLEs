@@ -2,17 +2,17 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import app from "./app.js";
 
-// Next.js chargeait .env.local tout seul ; ici on le fait à la main (s'il existe).
+// Next.js loaded .env.local automatically; here we do it by hand (if the file exists).
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  /* pas de fichier : variables d'environnement du système */
+  /* no file: use the system environment variables */
 }
 
-// En production, ce même serveur sert aussi le front compilé par `vite build`.
+// In production, the same server also serves the front end built by `vite build`.
 if (process.env.NODE_ENV === "production") {
   app.use("/*", serveStatic({ root: "./dist" }));
 }
 
 const port = Number(process.env.PORT ?? 3210);
-serve({ fetch: app.fetch, port }, () => console.log(`API HanDLEs sur http://localhost:${port}`));
+serve({ fetch: app.fetch, port }, () => console.log(`HanDLEs API on http://localhost:${port}`));

@@ -6,10 +6,10 @@ import EndBanner from "./EndBanner.vue";
 import GuessGrid from "./GuessGrid.vue";
 import GuessInput from "./GuessInput.vue";
 
-// L'état de la partie vit dans le store Pinia : ce composant se contente de l'afficher.
+// The game state lives in the Pinia store: this component only displays it.
 const store = useGameStore();
 
-/** Couleur de la pastille n°i (0 à 7) dans la barre de progression. */
+/** Color of dot number i (0 to 7) in the progress bar. */
 function dotColor(i: number): string {
   const { guesses, solved } = store.game;
   if (!guesses[i]) return "bg-line";
@@ -25,19 +25,19 @@ const btn =
     class="flex flex-col gap-4 rounded-[18px] bg-white p-5 shadow-[0_1px_2px_rgba(20,23,28,0.06),0_8px_24px_rgba(20,23,28,0.05)]"
   >
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2.5">
         <span class="text-[13px] font-bold tracking-[0.08em] text-muted uppercase">
-          {{ store.game.mode === "daily" ? "Joueur du jour" : "Partie aléatoire" }}
+          {{ store.game.mode === "daily" ? "Daily player" : "Random game" }}
         </span>
         <div class="flex gap-[5px]" aria-hidden="true">
-          <!-- v-for sur un nombre : i va de 1 à MAX_TRIES -->
+          <!-- v-for over a number: i goes from 1 to MAX_TRIES -->
           <span v-for="i in MAX_TRIES" :key="i" class="size-2.5 rounded-full" :class="dotColor(i - 1)" />
         </div>
-        <span class="text-sm text-muted">Essai {{ store.tryNumber }} / {{ MAX_TRIES }}</span>
+        <span class="text-sm text-muted">Guess {{ store.tryNumber }} / {{ MAX_TRIES }}</span>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button type="button" :class="btn" @click="store.playDaily">Joueur du jour</button>
-        <button type="button" :class="btn" @click="store.playRandom">Partie aléatoire</button>
+        <button type="button" :class="btn" @click="store.playDaily">Daily player</button>
+        <button type="button" :class="btn" @click="store.playRandom">Random game</button>
       </div>
     </div>
 

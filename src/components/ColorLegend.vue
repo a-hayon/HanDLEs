@@ -6,12 +6,12 @@
     </span>
     <span class="flex items-center gap-1.5">
       <span class="size-3.5 rounded bg-near" />
-      Proche (poste partagé, ±5 cm, ±2 ans, ±3 n°)
+      Close (shared position, ±5 cm, ±2 years, ±3 number)
     </span>
     <span class="flex items-center gap-1.5">
       <span class="size-3.5 rounded border border-line bg-no" />
-      Faux
+      Wrong
     </span>
-    <span>↑ ↓ la bonne valeur est plus haute / plus basse</span>
+    <span>↑ ↓ the answer is higher / lower</span>
   </div>
 </template>

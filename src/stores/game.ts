@@ -7,7 +7,7 @@ type Mode = "daily" | "random";
 
 interface GameState {
   mode: Mode;
-  /** Identifiant de partie aléatoire ; absent pour le joueur du jour. */
+  /** Random game id; missing for the daily player. */
   gameId?: string;
   guesses: GuessFeedback[];
   solved: boolean;
@@ -17,36 +17,36 @@ interface GameState {
 const freshDaily = (): GameState => ({ mode: "daily", guesses: [], solved: false });
 const storageKey = (todayKey: string) => `handles:daily:${todayKey}`;
 
-/** Reprend la partie du jour sauvegardée dans le navigateur, sinon une partie neuve. */
+/** Resumes today's game saved in the browser, or starts a fresh one. */
 function loadDaily(todayKey: string): GameState {
   try {
     const saved = localStorage.getItem(storageKey(todayKey));
     return saved ? (JSON.parse(saved) as GameState) : freshDaily();
   } catch {
-    return freshDaily(); // stockage indisponible : on repart de zéro
+    return freshDaily(); // storage unavailable: start from scratch
   }
 }
 
 /**
- * Store « setup » : on écrit le même code que dans un <script setup> (ref, computed, watch, fonctions)
- * et on retourne ce que les composants ont le droit d'utiliser. Tout composant qui appelle
- * useGameStore() reçoit la MÊME instance : c'est un état partagé par toute l'application.
+ * "Setup" store: same code as in a <script setup> (ref, computed, watch, functions),
+ * returning what components are allowed to use. Every component that calls
+ * useGameStore() gets the SAME instance: this state is shared across the whole app.
  */
 export const useGameStore = defineStore("game", () => {
-  // --- État (équivalent de useState) ---
+  // --- State (the useState equivalent) ---
   const todayKey = parisDateKey();
   const players = ref<PlayerOption[]>([]);
   const game = ref<GameState>(loadDaily(todayKey));
   const pending = ref(false);
   const error = ref<string | null>(null);
 
-  // --- Valeurs dérivées (getters) : recalculées seulement quand ce qu'elles lisent change ---
+  // --- Derived values (getters): only recomputed when what they read changes ---
   const over = computed(() => game.value.solved || game.value.guesses.length >= MAX_TRIES);
   const guessedIds = computed(() => new Set(game.value.guesses.map((g) => g.playerId)));
   const tryNumber = computed(() => Math.min(game.value.guesses.length + (over.value ? 0 : 1), MAX_TRIES));
 
-  // --- Effet de bord (équivalent de useEffect) : sauvegarde à chaque modification de la partie ---
-  // `deep: true` car on modifie l'objet sur place (guesses.push) au lieu de le remplacer.
+  // --- Side effect (the useEffect equivalent): save the game whenever it changes ---
+  // `deep: true` because we mutate the object in place (guesses.push) instead of replacing it.
   watch(
     game,
     (g) => {
@@ -67,7 +67,7 @@ export const useGameStore = defineStore("game", () => {
       if (!res.ok) throw new Error();
       players.value = (await res.json()) as PlayerOption[];
     } catch {
-      error.value = "Impossible de charger la liste des joueurs.";
+      error.value = "Couldn’t load the player list.";
     }
   }
 
@@ -83,12 +83,12 @@ export const useGameStore = defineStore("game", () => {
       });
       if (!res.ok) throw new Error();
       const data = (await res.json()) as GuessResponse;
-      // Pas besoin de recréer l'objet comme en React : la réactivité de Vue détecte la mutation.
+      // No need to recreate the object like in React: Vue's reactivity picks up the mutation.
       game.value.guesses.push(data.feedback);
       game.value.solved = data.solved;
       if (data.answer) game.value.answer = data.answer;
     } catch {
-      error.value = "Impossible d’envoyer l’essai. Réessaie.";
+      error.value = "Couldn’t send your guess. Try again.";
     } finally {
       pending.value = false;
     }

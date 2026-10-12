@@ -4,14 +4,14 @@ import type { Player } from "../lib/types.js";
 import { PLAYERS } from "./players.js";
 
 /**
- * Le joueur mystère est dérivé d'un secret serveur (HANDLES_SECRET).
- * Même en lisant le code source public, on ne peut pas deviner la réponse.
+ * The mystery player is derived from a server secret (HANDLES_SECRET).
+ * Even with the public source code, nobody can work out the answer.
  */
 function secret(): string {
   const s = process.env.HANDLES_SECRET;
   if (s) return s;
   if (process.env.NODE_ENV === "production") {
-    throw new Error("HANDLES_SECRET doit être défini en production.");
+    throw new Error("HANDLES_SECRET must be set in production.");
   }
   return "dev-secret-not-for-production";
 }
@@ -25,7 +25,7 @@ export function getDailyTarget(dateKey = parisDateKey()): Player {
   return pick(`daily:${dateKey}`);
 }
 
-/** Partie aléatoire : le client garde un identifiant opaque, le serveur en déduit le joueur. */
+/** Random game: the client keeps an opaque id, the server derives the player from it. */
 export function getRandomTarget(gameId: string): Player {
   return pick(`random:${gameId}`);
 }

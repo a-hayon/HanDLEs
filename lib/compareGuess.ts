@@ -1,10 +1,10 @@
 import { TEAMS } from "./teams.js";
 import type { Cell, GuessFeedback, Player, Position, Verdict } from "./types.js";
 
-/** Seuils pour la couleur « proche » (jaune). */
+/** Thresholds for the "close" (yellow) color. */
 export const TOLERANCE = { heightCm: 5, age: 2, number: 3 } as const;
 
-/** Âge en années révolues à la date `today`. */
+/** Age in full years on the date `today`. */
 export function ageOn(birthDate: string, today: Date): number {
   const [y, m, d] = birthDate.split("-").map(Number);
   let age = today.getFullYear() - y;
@@ -26,7 +26,7 @@ function numeric(guess: number, target: number, tolerance: number): Cell<number>
   };
 }
 
-/** Postes identiques = correct ; au moins un poste en commun (ex. G-F vs F) = proche. */
+/** Same position = correct; at least one position in common (e.g. G-F vs F) = close. */
 export function comparePosition(guess: Position, target: Position): Cell<Position> {
   if (guess === target) return { value: guess, verdict: "correct" };
   const t = target.split("-");
@@ -35,7 +35,7 @@ export function comparePosition(guess: Position, target: Position): Cell<Positio
   return { value: guess, verdict };
 }
 
-/** Fonction pure : compare un essai au joueur mystère. Testée dans compareGuess.test.ts. */
+/** Pure function: compares a guess with the mystery player. Tested in compareGuess.test.ts. */
 export function compareGuess(guess: Player, target: Player, today = new Date()): GuessFeedback {
   const g = TEAMS[guess.team];
   const t = TEAMS[target.team];

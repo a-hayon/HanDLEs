@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { positionLabel } from "@/lib/format";
 import type { PlayerSummary } from "@/lib/types";
 
-// Props = données reçues du parent (lecture seule). Emits = événements envoyés au parent.
+// Props = data received from the parent (read-only). Emits = events sent to the parent.
 const props = defineProps<{
   solved: boolean;
   answer: PlayerSummary;
@@ -12,14 +12,14 @@ const props = defineProps<{
 const emit = defineEmits<{ replay: [] }>();
 
 const title = computed(() =>
-  props.solved ? `Bravo ! C’était ${props.answer.name}.` : `Raté… il fallait trouver ${props.answer.name}.`,
+  props.solved ? `Nice! It was ${props.answer.name}.` : `Out of tries… it was ${props.answer.name}.`,
 );
 
 const details = computed(() => {
   const a = props.answer;
   return props.solved
-    ? `${a.teamName} · trouvé en ${props.tries} essai${props.tries > 1 ? "s" : ""}.`
-    : `${a.teamName} · ${positionLabel(a.position)} · ${a.heightCm} cm · ${a.age} ans · n°${a.number}`;
+    ? `${a.teamName} · found in ${props.tries} ${props.tries > 1 ? "tries" : "try"}.`
+    : `${a.teamName} · ${positionLabel(a.position)} · ${a.heightCm} cm · ${a.age} years old · #${a.number}`;
 });
 </script>
 
@@ -37,7 +37,7 @@ const details = computed(() => {
       class="min-h-11 cursor-pointer rounded-[10px] bg-accent px-[18px] text-[15px] font-bold text-white hover:brightness-95"
       @click="emit('replay')"
     >
-      Rejouer
+      Play again
     </button>
   </div>
 </template>

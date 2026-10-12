@@ -10,7 +10,7 @@ const options = [
 ];
 
 describe("GuessInput", () => {
-  it("filtre sans tenir compte des accents", async () => {
+  it("filters regardless of accents", async () => {
     const wrapper = mount(GuessInput, { props: { options, excluded: new Set<number>() } });
     await wrapper.get("input").setValue("doncic");
     const items = wrapper.findAll("li");
@@ -18,14 +18,14 @@ describe("GuessInput", () => {
     expect(items[0].text()).toContain("Luka Dončić");
   });
 
-  it("n'affiche pas les joueurs déjà proposés", async () => {
+  it("hides players that were already guessed", async () => {
     const wrapper = mount(GuessInput, { props: { options, excluded: new Set([6]) } });
     await wrapper.get("input").setValue("doncic");
     expect(wrapper.findAll("li")).toHaveLength(0);
-    expect(wrapper.text()).toContain("Aucun joueur trouvé");
+    expect(wrapper.text()).toContain("No player found");
   });
 
-  it("émet `pick` avec l'id du joueur choisi au clavier", async () => {
+  it("emits `pick` with the id of the player chosen with the keyboard", async () => {
     const wrapper = mount(GuessInput, { props: { options, excluded: new Set<number>() } });
     const input = wrapper.get("input");
     await input.setValue("i"); // Jokić, Dončić, Wembanyama

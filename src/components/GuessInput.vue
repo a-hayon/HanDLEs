@@ -8,7 +8,7 @@ const props = defineProps<{
   excluded: Set<number>;
   disabled?: boolean;
 }>();
-// Au lieu de recevoir une fonction `onPick` en prop (React), le composant émet un événement.
+// Instead of receiving an `onPick` function as a prop (React), the component emits an event.
 const emit = defineEmits<{ pick: [playerId: number] }>();
 
 const query = ref("");
@@ -41,10 +41,10 @@ function pickActive() {
 
 <template>
   <div class="relative flex flex-col gap-1.5">
-    <label :for="inputId" class="text-sm font-semibold text-[#2b2f38]">Choisis un joueur</label>
+    <label :for="inputId" class="text-sm font-semibold text-[#2b2f38]">Pick a player</label>
     <!--
-      v-model = :value + @input en une seule directive.
-      Les modificateurs .down/.up/.enter filtrent la touche, .prevent appelle preventDefault().
+      v-model = :value + @input in a single directive.
+      The .down/.up/.enter modifiers filter the key, .prevent calls preventDefault().
     -->
     <input
       :id="inputId"
@@ -55,7 +55,7 @@ function pickActive() {
       :aria-expanded="open"
       :aria-controls="listId"
       :aria-activedescendant="open ? `${listId}-${active}` : undefined"
-      placeholder="Tape un nom… ex. Wembanyama"
+      placeholder="Type a name… e.g. Wembanyama"
       :disabled="disabled"
       class="min-h-[52px] w-full rounded-xl border-[1.5px] border-line bg-[#fafafb] px-4 text-[17px] outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 disabled:opacity-60"
       @input="active = 0"
@@ -86,7 +86,7 @@ function pickActive() {
       </li>
     </ul>
     <span v-else-if="query.trim().length > 1" class="text-[13px] text-[#5a606c]">
-      Aucun joueur trouvé (ou déjà proposé).
+      No player found (or already guessed).
     </span>
   </div>
 </template>
