@@ -54,6 +54,13 @@ API: `GET /api/players` (names only, for autocomplete) and `POST /api/guess` (re
 - Components → Vue Test Utils + happy-dom, with `// @vitest-environment happy-dom` at the top
   (see `src/components/GuessInput.test.ts`). Test behavior (rendered text, emitted events), not internals.
 
+## Claude Code setup (`.claude/`)
+
+- Hooks (`settings.json`): every edited file is formatted with Prettier and fixed with ESLint automatically
+  (`hooks/format-file.mjs`); `hooks/guard.mjs` blocks force pushes, `git reset --hard`, `rm -rf`, `--no-verify` and any
+  access to secret `.env` files. If a hook blocks you, don't work around it: tell the user.
+- Skills: `/preflight` (checks before a commit or PR), `/new-component` (Vue component + test).
+
 ## Gotchas
 
 - The daily player changes at midnight **Paris time** (`lib/date.ts`), not UTC.
