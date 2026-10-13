@@ -60,6 +60,8 @@ API: `GET /api/players` (names only, for autocomplete) and `POST /api/guess` (re
   (`hooks/format-file.mjs`); `hooks/guard.mjs` blocks force pushes, `git reset --hard`, `rm -rf`, `--no-verify` and any
   access to secret `.env` files. If a hook blocks you, don't work around it: tell the user.
 - Skills: `/preflight` (checks before a commit or PR), `/new-component` (Vue component + test).
+- Subagent: `vue-reviewer` (`agents/vue-reviewer.md`), a read-only code review of Vue / TypeScript changes. Use it
+  after a feature and before `/preflight`.
 
 ## Gotchas
 
